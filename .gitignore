@@ -1,0 +1,7 @@
+/shared
+/.vscode
+
+
+*.rc
+*.syso
+*.exe

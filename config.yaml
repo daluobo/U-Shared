@@ -1,0 +1,7 @@
+port: 9527
+
+basic_auth:
+  enabled: true
+  users:
+    - username: admin
+      password: admin

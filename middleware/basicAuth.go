@@ -59,6 +59,10 @@ func BasicAuth(ctx iris.Context) {
 }
 
 func validateUser(username, password string) bool {
+	if config.AppConfig.BasicAuth.Enabled == false {
+		return true
+	}
+
 	for _, user := range config.AppConfig.BasicAuth.Users {
 		if user.Username == username {
 			return password == user.Password

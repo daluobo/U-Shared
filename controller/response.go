@@ -70,6 +70,13 @@ func ResponseError(err error) hero.Response {
 	}
 }
 
+func ResponseErrorCode(code int,err error) hero.Response {
+	return hero.Response{
+		Code: code,
+		Err:  err,
+	}
+}
+
 func ResponseErrorStr(err string) hero.Response {
 	return hero.Response{
 		Code: iris.StatusInternalServerError,

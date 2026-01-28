@@ -49,13 +49,13 @@ func main() {
 
 	mvcApp := mvc.New(app)
 
-	sharedParty := mvcApp.Party("/shared")
-	sharedParty.Router.Use(middleware.BasicAuth)
-	sharedParty.Handle(new(controller.SharedController))
-
 	appParty := mvcApp.Party("/app")
-	// appParty.Router.Use(middleware.BasicAuth)
+	appParty.Router.Use(middleware.BasicAuth)
 	appParty.Handle(new(controller.AppController))
+
+	sharedParty := mvcApp.Party("/shared")
+	sharedParty.Router.Use(middleware.BasicAuth, middleware.PathValidator)
+	sharedParty.Handle(new(controller.SharedController))
 
 	runtime.LockOSThread()
 	systray.Run(onReady, onExit)
@@ -69,22 +69,12 @@ func initLog() {
 }
 
 func initFolder() {
-
-	var folders = []string{
-		"./shared/downloads",
-		"./shared/pictures",
-		"./shared/music",
-		"./shared/movies",
-		"./shared/documents",
-		"./shared/shared",
-	}
-
-	for _, folder := range folders {
-		_, err := os.Stat(folder)
+	for _, folder := range middleware.MediaFolders {
+		_, err := os.Stat("./shared/" + folder)
 		if err != nil {
 			if os.IsNotExist(err) {
 				golog.Infof("Folder does not exist, creating:", folder)
-				err = os.MkdirAll(folder, 0755)
+				err = os.MkdirAll("./shared/"+folder, 0755)
 				if err != nil {
 					golog.Errorf("Error creating folder:", err)
 				}

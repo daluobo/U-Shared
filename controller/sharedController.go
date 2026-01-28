@@ -1,128 +1,128 @@
 package controller
 
 import (
-	"fmt"
-	"io"
+	"go-shared/service"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 
-	"github.com/kataras/golog"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 )
 
-type sharedFile struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
-	Size int64  `json:"size"`
-}
-
 type SharedController struct {
-	Ctx iris.Context
+	Ctx     iris.Context
+	Service *service.SharedService
 }
 
-func (c *SharedController) GetBy(folderName string) mvc.Result {
-	folderPath := "./shared/" + folderName
-
-	folder, err := os.Open(folderPath)
-	if err != nil {
-		fmt.Println("Error reading directory:", err)
-		return ResponseError(err)
-	}
-	defer folder.Close()
-
-	fileList, err := folder.ReadDir(-1)
-	if err != nil {
-		fmt.Println("Error reading files:", err)
-		return ResponseError(err)
-	}
-
-	fs := make([]sharedFile, 0)
-	for _, file := range fileList {
-
-		if file.Name() == "." || file.Name() == ".." {
-			continue
-		}
-		var t = "folder"
-		if !file.IsDir() {
-			t = "file"
-		}
-
-		info, err := file.Info()
-		if err != nil {
-			return ResponseError(err)
-		}
-
-		fs = append(fs, sharedFile{
-			Name: file.Name(),
-			Type: t,
-			Size: info.Size(),
-		})
-	}
-
-	return ResponseData(fs)
-}
-
-func (c *SharedController) GetDownloadBy(folderName, fileName string) {
-	filePath := filepath.Join("./shared/", folderName, fileName)
-
-	_, err := os.Stat(filePath)
-
+// GetBy 处理 GET /files/{path}
+func (c *SharedController) GetBy(path string) mvc.Result {
+	info, err := c.Service.GetFileInfo(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			golog.Errorf("File does not exist:", filePath)
-			c.Ctx.StatusCode(iris.StatusNotFound)
-			c.Ctx.WriteString("File not found")
-			return
-		} else {
-			golog.Errorf("Error checking file:", err)
-			c.Ctx.StatusCode(iris.StatusInternalServerError)
-			c.Ctx.WriteString("Internal server error")
-			return
+			return ResponseErrorCode(iris.StatusNotFound, err)
+		} else if os.IsPermission(err) {
+			return ResponseErrorCode(iris.StatusForbidden, err)
 		}
+		return ResponseErrorCode(iris.StatusInternalServerError, err)
 	}
-	c.Ctx.SendFile(filePath, fileName)
+
+	if info.IsDir() {
+		// 如果是目录，返回目录列表
+		list, err := c.Service.ListFiles(path)
+		if err != nil {
+			return ResponseErrorCode(iris.StatusInternalServerError, err)
+		}
+		return ResponseData(list)
+
+	} else {
+		// 如果是文件，直接提供下载
+		c.Ctx.ServeFile(filepath.Join(service.BasePath, path))
+		return mvc.Response{}
+	}
 }
 
-func (c *SharedController) PostUpload() mvc.Result {
-	folderName := c.Ctx.FormValue("folder")
-	fileName := c.Ctx.FormValue("name")
+// PostBy 处理 POST /files/{path} 用于上传文件
+func (c *SharedController) PostBy(path string) mvc.Result {
 	file, _, err := c.Ctx.FormFile("file")
 	if err != nil {
-		return ResponseError(err)
+		return ResponseErrorCode(iris.StatusBadRequest, err)
 	}
 	defer file.Close()
 
-	filePath := filepath.Join("./shared/", folderName, fileName)
-
-	_, err = os.Stat(filePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			golog.Errorf("File does not exist:", filePath)
-		} else {
-			golog.Errorf("Error checking file:", err)
-			return ResponseError(err)
-		}
-	} else {
-		err = os.Remove(filePath)
-		if err != nil {
-			golog.Errorf("Error deleting file:", err)
-			return ResponseError(err)
-		} else {
-			golog.Infof("File deleted:", filePath)
-		}
-	}
-
-	out, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0666)
-	if err != nil {
-		return ResponseError(err)
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, file)
-	if err != nil {
+	if err := c.Service.UploadFile(path, file, false); err != nil {
 		return ResponseError(err)
 	}
 
 	return ResponseOk()
+}
+
+// PutBy 处理 PUT /files/{path} 用于覆盖上传文件
+func (c *SharedController) PutBy(path string) mvc.Result {
+	// 从请求体读取文件内容
+	body := c.Ctx.Request().Body
+	defer body.Close()
+
+	if err := c.Service.UploadFile(path, body, true); err != nil {
+		return ResponseError(err)
+	}
+
+	return ResponseOk()
+}
+
+// DeleteBy 处理 DELETE /files/{path}
+func (c *SharedController) DeleteBy(path string) mvc.Result {
+	if err := c.Service.DeleteFile(path); err != nil {
+		return ResponseError(err)
+	}
+	return ResponseOk()
+}
+
+// HeadBy 处理 HEAD /files/{path}
+func (c *SharedController) HeadBy(path string) mvc.Result {
+	info, err := c.Service.GetFileInfo(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			c.Ctx.StatusCode(iris.StatusNotFound)
+		} else if os.IsPermission(err) {
+			c.Ctx.StatusCode(iris.StatusForbidden)
+		} else {
+			c.Ctx.StatusCode(iris.StatusInternalServerError)
+		}
+		return mvc.Response{}
+	}
+
+	c.Ctx.Header("Content-Length", strconv.FormatInt(info.Size(), 10))
+	c.Ctx.Header("Last-Modified", info.ModTime().Format(http.TimeFormat))
+	c.Ctx.StatusCode(iris.StatusOK)
+	return mvc.Response{}
+}
+
+// Options 处理 OPTIONS /files
+func (c *SharedController) Options() mvc.Result {
+	c.Ctx.Header("Allow", "GET, HEAD, POST, PUT, DELETE, OPTIONS")
+	c.Ctx.Header("DAV", "1")
+	c.Ctx.StatusCode(iris.StatusOK)
+	return mvc.Response{}
+}
+
+func (c *SharedController) BeforeActivation(b mvc.BeforeActivation) {
+	// 1. 注册 GET 路由（支持多级路径）
+	b.Handle("GET", "/{path:path}", "GetBy")
+
+	// 2. 注册 POST 路由（支持多级路径）
+	b.Handle("POST", "/{path:path}", "PostBy")
+
+	// 3. 注册 PUT 路由（支持多级路径）
+	b.Handle("PUT", "/{path:path}", "PutBy")
+
+	// 4. 注册 DELETE 路由（支持多级路径）
+	b.Handle("DELETE", "/{path:path}", "DeleteBy")
+
+	// 5. 注册 HEAD 路由（支持多级路径）
+	b.Handle("HEAD", "/{path:path}", "HeadBy")
+
+	// 6. 注册 OPTIONS 路由（根路径）
+	b.Handle("OPTIONS", "/", "Options")
 }

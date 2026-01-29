@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const BasePath = "./shared/"
@@ -35,7 +36,7 @@ func (s *SharedService) ListFiles(path string) (*[]model.SharedFile, error) {
 			Name:    file.Name(),
 			Path:    strings.ReplaceAll(filepath.Join(path, file.Name()), "\\", "/"),
 			Size:    info.Size(),
-			ModTime: info.ModTime().Unix(),
+			ModTime: info.ModTime().UnixNano() / int64(time.Millisecond),
 			IsDir:   file.IsDir(),
 		})
 	}

@@ -2,9 +2,9 @@ package main
 
 import (
 	_ "embed"
-	"go-shared/config"
-	"go-shared/controller"
-	"go-shared/middleware"
+	"u-shared/config"
+	"u-shared/controller"
+	"u-shared/middleware"
 	"os"
 	"runtime"
 	"strconv"
@@ -41,11 +41,6 @@ func main() {
 	if err != nil {
 		golog.Fatal("Failed to load config:", err)
 	}
-
-	app.RegisterView(iris.HTML("./views", ".html"))
-	app.Get("/litplayer_privacy_policy", func(ctx iris.Context) {
-		ctx.View("litplayer_privacy_policy.html")
-	})
 
 	mvcApp := mvc.New(app)
 

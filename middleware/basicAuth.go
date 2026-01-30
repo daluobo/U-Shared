@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"strings"
 
-	"go-shared/config"
+	"u-shared/config"
 
 	"github.com/kataras/iris/v12"
 )

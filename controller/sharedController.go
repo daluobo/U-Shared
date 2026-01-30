@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"go-shared/service"
+	"u-shared/service"
 	"net/http"
 	"os"
 	"path/filepath"

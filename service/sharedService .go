@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	"go-shared/model"
+	"u-shared/model"
 	"io"
 	"os"
 	"path/filepath"

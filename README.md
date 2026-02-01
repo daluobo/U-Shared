@@ -1,5 +1,6 @@
 # 🐟 u-shared rose get fun 🍚
 
+[中文介绍](https://github.com/daluobo/u-shared/blob/main/README_CN.md)
 
 A simple HTTP server that supports Basic Authorization, styled like WebDav, for file sharing and synchronization.
 

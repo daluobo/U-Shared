@@ -1,14 +1,14 @@
 package main
 
 import (
-	_ "embed"
-	"u-shared/config"
-	"u-shared/controller"
-	"u-shared/middleware"
+	"embed"
 	"os"
 	"runtime"
 	"strconv"
 	"time"
+	"u-shared/config"
+	"u-shared/controller"
+	"u-shared/middleware"
 
 	"github.com/getlantern/systray"
 	"github.com/kataras/golog"
@@ -21,6 +21,9 @@ import (
 
 // 生成图标 windres -o app-icon.syso app-icon.rc
 // 打包 命令 go build -ldflags="-H windowsgui"
+
+//go:embed assets/*
+var fs embed.FS
 
 var (
 	app *iris.Application
@@ -106,7 +109,7 @@ func onExit() {
 }
 
 func loadIcon() []byte {
-	data, err := os.ReadFile("app-icon.ico")
+	data, err := fs.ReadFile("assets/app-icon.ico")
 	if err != nil {
 		// 处理错误或使用内置图标
 	}

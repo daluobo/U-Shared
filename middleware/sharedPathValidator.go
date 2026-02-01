@@ -9,12 +9,12 @@ import (
 var MediaFolders = []string{
 	"Audiobooks",
 	"Podcasts",
-	"Downloads",
+	"Download",
 	"Pictures",
 	"Music",
 	"Movies",
 	"Documents",
-	"Shared",
+	"shared",
 }
 
 func PathValidator(ctx iris.Context) {

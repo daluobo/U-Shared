@@ -6,6 +6,10 @@ A simple HTTP server that supports Basic Authorization, styled like WebDav, for 
 
 When used with the [LitPlayer](https://github.com/daluobo/LitPlayer-release), it can avoid complex SMB configuration or WebDav server deployment.
 
+## 🚀 Usage
+- Place the [downloaded](https://github.com/daluobo/U-Shared/releases) config.yaml and .exe files in the same folder
+- Double-click to run, and usable folders will be automatically created
+
 ## 💡 Precautions
 - Please modify the port, account, and password in the configuration file before use.
 - After starting, the server will run in the background and can be exited via the system tray.

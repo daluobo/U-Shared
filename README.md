@@ -1,4 +1,4 @@
-# 🐟 u-shared rose get fun 🍚
+# 🐟 U-Shared Rose Get Fun 🍚
 
 [中文介绍](https://github.com/daluobo/u-shared/blob/main/README_CN.md)
 

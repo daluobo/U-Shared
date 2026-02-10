@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -89,8 +90,12 @@ func (c *AppController) Get() mvc.Result {
 	}
 
 	if !found {
-		return ResponseFail(fmt.Errorf("no matching APK files found for package '%s'", packageName))
+		return ResponseFail(fmt.Sprintf("no matching APK files found for package '%s'", packageName), "")
 	}
 
-	return ResponseData(latestFileInfo.Name())
+
+	host:=c.Ctx.Host()
+	url	:= fmt.Sprintf("http://%s/shared/shared/%s", host, url.PathEscape(latestFileInfo.Name()))
+
+	return ResponseData(url)
 }

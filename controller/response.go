@@ -2,7 +2,6 @@ package controller
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/hero"
@@ -42,17 +41,7 @@ func ResponseData(data interface{}) hero.Response {
 	}
 }
 
-func ResponseFail(data interface{}) hero.Response {
-	var msg string
-    switch v := data.(type) {
-    case string:
-        msg = v
-    case error:
-        msg = v.Error()
-    default:
-        msg = fmt.Sprintf("%v", v)
-    }
-
+func ResponseFail(msg string, data interface{}) hero.Response {
 	return hero.Response{
 		Code: iris.StatusOK,
 		Object: Response{
@@ -70,7 +59,7 @@ func ResponseError(err error) hero.Response {
 	}
 }
 
-func ResponseErrorCode(code int,err error) hero.Response {
+func ResponseErrorCode(code int, err error) hero.Response {
 	return hero.Response{
 		Code: code,
 		Err:  err,
